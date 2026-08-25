@@ -1,4 +1,5 @@
-"name": "corte-no-pix",
+{
+  "name": "corte-no-pix",
   "private": true,
   "version": "1.0.0",
   "scripts": {
