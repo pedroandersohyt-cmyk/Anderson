@@ -1,52 +1,100 @@
 "use client"
-import { useState } from 'react'
+import { useState, useEffect } from "react"
 
-export default function Home() {
-  const [hora, setHora] = useState("")
-  const [corte, setCorte] = useState({nome:"", preco:""})
-  const horarios = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
-  const cortes = [
-    {nome:"Social", preco:10, desc:"Clássico na tesoura"},
-    {nome:"Degradê", preco:15, desc:"Degradê na zero"},
-    {nome:"Navalhado", preco:20, desc:"Navalhado + acabamento"},
-  ]
-  
-  const agendar = () => {
-    if(!hora) return alert("Escolhe o horário!")
-    if(!corte.nome) return alert("Escolhe o tipo de corte!")
-    const msg = `Fala mano! Quero agendar: ✂️ ${corte.nome} - R$${corte.preco} as ${hora} 💈`
-    window.open(`https://wa.me/5588921592905?text=${encodeURIComponent(msg)}`, "_blank")
+export default function Page() {
+  const [data, setData] = useState("")
+  const [horaSel, setHoraSel] = useState("")
+  const [agendamentos, setAgendamentos] = useState([])
+  const [nome, setNome] = useState("")
+
+  // SEU HORÁRIO OFICIAL: 08h às 18h com pausa 12h
+  const horarios = ["08:00","09:00","10:00","11:00","13:00","14:00","15:00","16:00","17:00","18:00"]
+
+  useEffect(() => {
+    const salvos = JSON.parse(localStorage.getItem("barbearia_anderson") || "[]")
+    setAgendamentos(salvos)
+  }, [])
+
+  const ocupados = agendamentos.filter(a => a.data === data).map(a => a.horario)
+
+  function agendar() {
+    if (!data || !horaSel || !nome) {
+      alert("Preencha nome, data e horário!")
+      return
+    }
+    const jaExiste = agendamentos.some(a => a.data === data && a.horario === horaSel)
+    if (jaExiste) {
+      alert(`❌ Horário ${horaSel} do dia ${data} já foi marcado!`)
+      return
+    }
+    const novo = [...agendamentos, { data, horario: horaSel, cliente: nome }]
+    localStorage.setItem("barbearia_anderson", JSON.stringify(novo))
+    setAgendamentos(novo)
+    alert(`✅ ${nome}, agendado dia ${data} às ${horaSel}!`)
+    setHoraSel("")
   }
 
   return (
-    <div style={{background:'#050505', color:'white', minHeight:'100vh', fontFamily:'sans-serif'}}>
-      <div style={{maxWidth:'480px', margin:'0 auto', padding:'30px 20px', textAlign:'center'}}>
-        <h1 style={{color:'#00ff88', fontSize:'12px', letterSpacing:'4px'}}>BARBEARIA VISIONARIA</h1>
-        <h2 style={{fontSize:'32px', fontWeight:'900', marginTop:'20px', lineHeight:'1.1'}}>AGENDE SEU<br/><span style={{color:'#00ff88'}}>CORTE VISIONARIO</span></h2>
+    <div style={{background:"#0a0a0a", color:"#fff", minHeight:"100vh", fontFamily:"sans-serif"}}>
+      <div style={{background:"#d4a017", color:"#000", textAlign:"center", padding:"30px 20px"}}>
+        <h1 style={{fontSize:32, fontWeight:900, margin:0}}>BARBEARIA ESTILO</h1>
+        <p>Anderson - 08h às 18h (Almoço 12h)</p>
+      </div>
+
+      <div style={{maxWidth:420, margin:"0 auto", padding:20}}>
+        <h2 style={{color:"#d4a017"}}>✂️ Agendar Corte</h2>
         
-        <div style={{background:'#111', border:'2px solid #222', borderRadius:'16px', padding:'20px', marginTop:'25px', textAlign:'left'}}>
-          <p style={{fontWeight:'700', marginBottom:'12px'}}>✂️ Escolha seu corte:</p>
-          <div style={{display:'grid', gap:'10px'}}>
-            {cortes.map(c => (
-              <button key={c.nome} onClick={()=>setCorte(c)} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px', borderRadius:'10px', border: corte.nome===c.nome ? '2px solid #00ff88' : '1px solid #333', background: corte.nome===c.nome ? '#00ff88' : '#000', color: corte.nome===c.nome ? 'black' : 'white', textAlign:'left'}}>
-                <div><div style={{fontWeight:'900'}}>{c.nome}</div><div style={{fontSize:'12px', opacity:0.7}}>{c.desc}</div></div>
-                <div style={{fontWeight:'900', fontSize:'18px'}}>R${c.preco}</div>
+        <input 
+          placeholder="Seu nome" 
+          value={nome} 
+          onChange={e=>setNome(e.target.value)} 
+          style={{width:"100%", padding:14, borderRadius:10, marginBottom:12, background:"#222", color:"#fff", border:"1px solid #333"}}
+        />
+
+        <input 
+          type="date" 
+          value={data} 
+          onChange={e=>setData(e.target.value)} 
+          style={{width:"100%", padding:14, borderRadius:10, marginBottom:15, background:"#222", color:"#fff", border:"1px solid #333"}}
+        />
+
+        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:15}}>
+          {horarios.map(h=>{
+            const ocupado = ocupados.includes(h)
+            const selecionado = h===horaSel
+            return (
+              <button 
+                key={h} 
+                disabled={ocupado} 
+                onClick={()=>setHoraSel(h)} 
+                style={{
+                  padding:14, 
+                  borderRadius:10, 
+                  fontWeight:"bold",
+                  background: ocupado ? "#333" : selecionado ? "#d4a017" : "#1a1a1a",
+                  color: ocupado ? "#666" : selecionado ? "#000" : "#fff",
+                  border:"1px solid #333",
+                  textDecoration: ocupado ? "line-through" : "none"
+                }}
+              >
+                {ocupado ? `${h} ❌` : h}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
 
-        <div style={{background:'#111', border:'2px solid #00ff88', borderRadius:'16px', padding:'20px', marginTop:'16px'}}>
-          <p style={{fontWeight:'700', marginBottom:'12px', textAlign:'left'}}>📅 HOJE - Horários disponíveis:</p>
-          <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'10px'}}>
-            {horarios.map(h => (
-              <button key={h} onClick={()=>setHora(h)} style={{padding:'12px', borderRadius:'10px', border: hora===h ? '2px solid #00ff88' : '1px solid #333', background: hora===h ? '#00ff88' : '#000', color: hora===h ? 'black' : 'white', fontWeight:'900'}}>{h}</button>
-            ))}
-          </div>
-          <button onClick={agendar} style={{width:'100%', background:'#00ff88', color:'black', fontWeight:'900', padding:'18px', borderRadius:'12px', marginTop:'20px', border:'none', fontSize:'16px'}}>
-            {corte.nome ? `AGENDAR ${corte.nome.toUpperCase()} AS ${hora || '--:--'}` : 'AGENDAR NO WHATSAPP'}
-          </button>
-          <p style={{fontSize:'11px', color:'#666', marginTop:'8px'}}>Confirmação imediata no Zap 88 92159-2905</p>
+        <div style={{background:"#1a1a1a", padding:10, borderRadius:8, marginBottom:15, fontSize:13, color:"#aaa"}}>
+          ⏰ 12:00 pausa almoço - Horário com ❌ = já marcado
+        </div>
+
+        <button onClick={agendar} style={{width:"100%", background:"#d4a017", color:"#000", padding:16, borderRadius:12, fontWeight:900, fontSize:18, border:"none"}}>
+          CONFIRMAR AGENDAMENTO
+        </button>
+
+        <div style={{marginTop:20}}>
+          {agendamentos.filter(a=>a.data===data).map((a,i)=>
+            <div key={i} style={{background:"#222", padding:10, borderRadius:8, marginBottom:6}}>🕐 {a.horario} - {a.cliente}</div>
+          )}
         </div>
       </div>
     </div>
